@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# [START dlp_inspect_text_file]
+# [START dlp_inspect_image_file]
 # Import the Google Cloud Data Loss Prevention library
 import io
 
@@ -55,4 +55,4 @@ if response.result.findings:
         print('Likelihood: {}'.format(finding.likelihood))
 else:
     print('No findings.')
-# [END dlp_inspect_text_file]
+# [END dlp_inspect_image_file]
