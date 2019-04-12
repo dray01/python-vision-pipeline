@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """App Engine app to serve as an endpoint for App Engine queue samples."""
-
+import os
 # [START cloud_tasks_appengine_quickstart]
 from flask import Flask, request
 
@@ -38,4 +38,5 @@ def hello():
 if __name__ == '__main__':
     # This is used when running locally. Gunicorn is used to run the
     # application on Google App Engine. See entrypoint in app.yaml.
-    app.run(host='127.0.0.1', port=8080, debug=True)
+    port = os.environ.get('PORT', 8080)
+    app.run(debug=True, host='0.0.0.0', port=int(port))
