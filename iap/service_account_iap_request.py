@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.rom googleapiclient import discovery
 
-"""Use a service account to access an IAP protected resource"""
+"""Use a service account and key file to access an IAP protected resource"""
 
 
 def get_private_key(json_file_name):
@@ -25,7 +25,6 @@ def get_private_key(json_file_name):
     Returns:
         The private key from the file
     """
-
     import json
 
     with open(json_file_name, 'r') as f:
@@ -40,7 +39,6 @@ def build_claim(client_id, service_account):
     Args:
         client_id: the OAuth client ID. Available from API/Credentials console
         service_account: the service account email
-
 
     Returns:
         The claim
@@ -65,14 +63,14 @@ def create_assertion(claim, private_key):
     """Creates an assertion - a signed claim of authorization
 
     Args:
-        claim: the claim to send to the OAuth2 service (from build_claim)
+        claim: the claim to send to the OAuth2 service
         private_key: the service account's private key (in PEM format)
 
     Returns:
         The assertion
     """
     import jwt
-    
+
     assertion = jwt.encode(
         claim,
         private_key,
@@ -86,13 +84,12 @@ def get_id_token(claim, private_key):
     """Gets an OpenID Connect token for the given private key
 
     Args:
-        claim: the claim to send to the OAuth2 service (from build_claim)
+        claim: the claim to send to the OAuth2 service
         private_key: the service account's private key (in PEM format)
 
     Returns:
         An OpenID connect token to authenticate requests from the service acct
     """
-
     import json
     import requests
 
@@ -108,8 +105,6 @@ def get_id_token(claim, private_key):
             'assertion': assertion
         }
     )
-
-    print(response.text)
 
     id_token = response.json()['id_token']
     return id_token
@@ -131,7 +126,6 @@ def request(client_id, service_account, private_key, method, url, **kwargs):
     Returns:
         The requests Response object from the request
     """
-
     import requests
 
     # Add Authorization header using service account and client information
@@ -147,7 +141,7 @@ def request(client_id, service_account, private_key, method, url, **kwargs):
 
 
 def main():
-    """Make a GET request to the IAP-protected URL using service account creds
+    """Make a GET request to the IAP-protected URL using service account key
     """
 
     import argparse
@@ -155,16 +149,13 @@ def main():
     parser = argparse.ArgumentParser(
         description='Call IAP protected resource with service account'
     )
-
     parser.add_argument('client_id', help="The protected site's client ID")
     parser.add_argument('service_account', help="The service account's email")
     parser.add_argument('key_file', help="The service account's key file")
     parser.add_argument('url', help="URL to access")
-
     args = parser.parse_args()
 
     private_key = get_private_key(args.key_file)
-
     response = request(
         args.client_id, args.service_account, private_key, 'GET', args.url
     )
