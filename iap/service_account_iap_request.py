@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.rom googleapiclient import discovery
 
-"""Use a service account and key file to access an IAP protected resource"""
+"""Use a service account and key file to access an IAP-protected resource"""
 
 
 def get_private_key(json_file_name):
@@ -35,7 +35,8 @@ def get_private_key(json_file_name):
 
 
 def build_claim(client_id, service_account):
-    """Creates the necessary claim to request access to an IAP protected URL
+    """Creates the necessary claim to request access to an IAP-protected URL
+
     Args:
         client_id: the OAuth client ID. Available from API/Credentials console
         service_account: the service account email
