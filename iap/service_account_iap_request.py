@@ -81,7 +81,7 @@ def create_assertion(claim, private_key):
     return assertion
 
 
-def get_id_token(claim, private_key):
+def get_id_token(assertion):
     """Gets an OpenID Connect token for the given private key
 
     Args:
@@ -94,13 +94,11 @@ def get_id_token(claim, private_key):
     import json
     import requests
 
-    assertion = create_assertion(claim, private_key)
-
-    endpoint = claim['aud']
+    oauth_endpoint = 'https://www.googleapis.com/oauth2/v4/token'
     grant_type = 'urn:ietf:params:oauth:grant-type:jwt-bearer'
 
     response = requests.post(
-        endpoint,
+        oauth_endpoint,
         data = {
             'grant_type': grant_type,
             'assertion': assertion
@@ -129,15 +127,14 @@ def request(client_id, service_account, private_key, method, url, **kwargs):
     """
     import requests
 
-    # Add Authorization header using service account and client information
     claim = build_claim(client_id, service_account)
-    id_token = get_id_token(claim, private_key)
+    assertion = create_assertion(claim, private_key)
+    id_token = get_id_token(assertion)
 
     if 'headers' not in kwargs:
         kwargs['headers'] = {}
     kwargs['headers']['Authorization'] = 'Bearer {}'.format(id_token)
 
-    # Make request with added Authorization header
     return requests.request(method, url, **kwargs)
 
 
