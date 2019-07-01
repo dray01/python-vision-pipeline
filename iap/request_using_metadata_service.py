@@ -52,39 +52,67 @@ def create_assertion(claim):
     Returns:
         The assertion
     """
-    import base64
-    import json
 
-    from googleapiclient import discovery
-    from oauth2client.client import GoogleCredentials
+    def encode_dict(dictionary):
+        """Encodes a dictionary to the form needed for a JWT
 
-    encoded_claim = base64.urlsafe_b64encode(json.dumps(claim).encode())
+        Args:
+            dictionary: the dictionary to encode
+
+        Returns:
+            the encoded dictionary (bytes)
+        """
+        import base64
+        import json
+
+        json_dict_string = json.dumps(dictionary)
+        json_dict_bytes = json_dict_string.encode()
+
+        encoded_bytes = base64.urlsafe_b64encode(json_dict_bytes)
+        encoded_bytes = encoded_string.replace('=', '')
+
+        return encoded_bytes
+
+    def signByteString(byteString, service_account):
+        """Signs a byte string by the specified service account
+
+        Args:
+            byteString: the bytes to sign
+            service_account: the email of the service account that will sign
+
+        Returns:
+            the signature (bytes)
+        """
+        import base64
+
+        from googleapiclient import discovery
+        from oauth2client.client import GoogleCredentials
+
+        credentials = GoogleCredentials.get_application_default()
+        service = discovery.build('iam', 'v1', credentials=credentials)
+
+        name = 'projects/-/serviceAccounts/{}'.format(service_account)
+        request = service.projects().serviceAccounts().signBlob(
+            name=name,
+            body={
+                'bytesToSign': base64.urlsafe_b64encode(byteString).decode()
+            }
+        )
+        response = request.execute()
+
+        signature = response['signature']
+        signature = signature.replace('+', '-').replace('/', '_')
+        signature = signature.replace('=', '')
+        signature = signature.encode()
+
+        return signature
 
     header = {"alg":"RS256","typ":"JWT"}
-    encoded_header = base64.urlsafe_b64encode(json.dumps(header).encode())
-
-    to_sign = encoded_header + b'.' + encoded_claim
-    to_sign = to_sign.replace(b'=', b'')
-
-    credentials = GoogleCredentials.get_application_default()
-    service = discovery.build('iam', 'v1', credentials=credentials)
-
+    to_sign = encode_dict(header) + b'.' + encode_dict(claim)
     service_account = claim['iss']
-    name = 'projects/-/serviceAccounts/{}'.format(service_account)
+    signature = signByteString(to_sign, service_account)
 
-    request = service.projects().serviceAccounts().signBlob(
-        name=name,
-        body={
-        'bytesToSign': base64.urlsafe_b64encode(to_sign).decode()
-        }
-    )
-
-    response = request.execute()
-
-    signature = response['signature']
-    signature = signature.replace('+', '-').replace('/', '_').replace('=', '')
-
-    assertion = to_sign + b'.' + signature.encode()
+    assertion = to_sign + b'.' + signature
     return assertion
 
 
