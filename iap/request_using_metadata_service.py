@@ -69,7 +69,7 @@ def create_assertion(claim):
         json_dict_bytes = json_dict_string.encode()
 
         encoded_bytes = base64.urlsafe_b64encode(json_dict_bytes)
-        encoded_bytes = encoded_string.replace('=', '')
+        encoded_bytes = encoded_bytes.replace(b'=', b'')
 
         return encoded_bytes
 
