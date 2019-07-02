@@ -44,76 +44,15 @@ def build_claim(client_id, service_account):
 
 
 def create_assertion(claim):
-    """Creates an assertion - a signed claim of authorization
+    import json
+    from google.cloud import iam_credentials_v1
 
-    Args:
-        claim: the claim to send to the OAuth2 service
+    client = iam_credentials_v1.IAMCredentialsClient()
+    name = 'projects/-/serviceAccounts/{}'.format(claim['iss'])
+    payload = json.dumps(claim)
 
-    Returns:
-        The assertion
-    """
-
-    def encode_dict(dictionary):
-        """Encodes a dictionary to the form needed for a JWT
-
-        Args:
-            dictionary: the dictionary to encode
-
-        Returns:
-            the encoded dictionary (bytes)
-        """
-        import base64
-        import json
-
-        json_dict_string = json.dumps(dictionary)
-        json_dict_bytes = json_dict_string.encode()
-
-        encoded_bytes = base64.urlsafe_b64encode(json_dict_bytes)
-        encoded_bytes = encoded_bytes.replace(b'=', b'')
-
-        return encoded_bytes
-
-    def signByteString(byteString, service_account):
-        """Signs a byte string by the specified service account
-
-        Args:
-            byteString: the bytes to sign
-            service_account: the email of the service account that will sign
-
-        Returns:
-            the signature (bytes)
-        """
-        import base64
-
-        from googleapiclient import discovery
-        from oauth2client.client import GoogleCredentials
-
-        credentials = GoogleCredentials.get_application_default()
-        service = discovery.build('iam', 'v1', credentials=credentials)
-
-        name = 'projects/-/serviceAccounts/{}'.format(service_account)
-        request = service.projects().serviceAccounts().signBlob(
-            name=name,
-            body={
-                'bytesToSign': base64.urlsafe_b64encode(byteString).decode()
-            }
-        )
-        response = request.execute()
-        signature = response['signature']
-        
-        signature = signature.replace('+', '-').replace('/', '_')
-        signature = signature.replace('=', '')
-        signature = signature.encode()
-
-        return signature
-
-    header = {"alg":"RS256","typ":"JWT"}
-    to_sign = encode_dict(header) + b'.' + encode_dict(claim)
-    service_account = claim['iss']
-    signature = signByteString(to_sign, service_account)
-
-    assertion = to_sign + b'.' + signature
-    return assertion
+    response = client.sign_jwt(name, payload)
+    return response.signed_jwt
 
 
 def get_id_token(assertion):
