@@ -99,8 +99,8 @@ def create_assertion(claim):
             }
         )
         response = request.execute()
-
         signature = response['signature']
+        
         signature = signature.replace('+', '-').replace('/', '_')
         signature = signature.replace('=', '')
         signature = signature.encode()
