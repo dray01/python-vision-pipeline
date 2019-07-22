@@ -82,11 +82,10 @@ def create_assertion(claim, private_key):
 
 
 def get_id_token(assertion):
-    """Gets an OpenID Connect token for the given private key
+    """Gets an OpenID Connect token for the given assertion
 
     Args:
-        claim: the claim to send to the OAuth2 service
-        private_key: the service account's private key (in PEM format)
+        assertion: the claim to send to the OAuth2 service
 
     Returns:
         An OpenID connect token to authenticate requests from the service acct
