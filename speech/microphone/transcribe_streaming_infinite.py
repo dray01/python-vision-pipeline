@@ -29,12 +29,10 @@ Example usage:
 """
 
 # [START speech_transcribe_infinite_streaming_imports]
-
 import time
 import re
 
-# uses result_end_time currently only avaialble in v1p1beta, will be in v1 soon
-from google.cloud import speech_v1p1beta1 as speech
+from google.cloud import speech_v1 as speech
 import pyaudio
 from six.moves import queue
 # [END speech_transcribe_infinite_streaming_imports]
@@ -45,12 +43,10 @@ def get_current_time():
     return int(round(time.time() * 1000))
 
 # [START speech_transcribe_infinite_streaming_globals]
-
 # Audio recording parameters
 STREAMING_LIMIT = 10000
 SAMPLE_RATE = 16000
 CHUNK_SIZE = int(SAMPLE_RATE / 10)  # 100ms
-
 
 class ResumableMicrophoneStream:
     """Opens a recording stream as a generator yielding the audio chunks."""
@@ -83,6 +79,7 @@ class ResumableMicrophoneStream:
             # overflow while the calling thread makes network requests, etc.
             stream_callback=self._fill_buffer,
         )
+# [END speech_transcribe_infinite_streaming_globals]
 
 # [END speech_transcribe_infinite_streaming_globals]
 
@@ -111,6 +108,7 @@ class ResumableMicrophoneStream:
 
 # [START speech_transcribe_infinite_streaming_generator]
 
+# [START speech_transcribe_infinite_streaming_generator]
     def generator(self):
         """Stream Audio from microphone to API and to local buffer"""
 
@@ -164,11 +162,9 @@ class ResumableMicrophoneStream:
                     break
 
             yield b''.join(data)
-
 # [END speech_transcribe_infinite_streaming_generator]
 
 # [START speech_transcribe_infinite_streaming_output]
-
 def listen_print_loop(responses, stream):
     """Iterates through server responses and prints them.
 
@@ -236,14 +232,13 @@ def listen_print_loop(responses, stream):
             print(str(corrected_time) + ': ' + "PROCESSING:" + transcript + '\r')
 
             stream.last_transcript_was_final = False
-
 # [END speech_transcribe_infinite_streaming_output]
 
 # [START speech_transcribe_infinite_streaming_main]
-
 def main():
     """start bidirectional streaming from microphone input to speech API"""
 
+    # Create the speech client 
     client = speech.SpeechClient()
     config = speech.types.RecognitionConfig(
         encoding=speech.enums.RecognitionConfig.AudioEncoding.LINEAR16,
@@ -293,5 +288,4 @@ def main():
 if __name__ == '__main__':
 
     main()
-
 # [END speech_transcribe_infinite_streaming_main]
