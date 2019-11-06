@@ -41,13 +41,17 @@ def detect_text(bucket, filename):
     text_detection_response = vision_client.document_text_detection({
         'source': {'image_uri': 'gs://{}/{}'.format(bucket, filename)}
     })
+    for page in text_detection_response.full_text_annotation.pages:
+        for block in page.blocks:
+            for paragraph in block.paragraphs:
+                print('Paragraph confidence: {}'.format(paragraph.confidence))
+
     annotations = text_detection_response.text_annotations
     if len(annotations) > 0:
         text = annotations[0].description
     else:
         text = ''
     print('Extracted text {} from image ({} chars).'.format(text, len(text)))
-
 
     # Submit a message to the bus for each target language
 
