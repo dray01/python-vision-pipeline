@@ -18,11 +18,9 @@ import os
 
 from google.cloud import pubsub_v1
 from google.cloud import storage
-from google.cloud import translate
 from google.cloud import vision
 
 vision_client = vision.ImageAnnotatorClient()
-translate_client = translate.Client()
 publisher = pubsub_v1.PublisherClient()
 storage_client = storage.Client()
 
@@ -50,25 +48,18 @@ def detect_text(bucket, filename):
         text = ''
     print('Extracted text {} from image ({} chars).'.format(text, len(text)))
 
-    detect_language_response = translate_client.detect_language(text)
-    src_lang = detect_language_response['language']
-    print('Detected language {} for text {}.'.format(src_lang, text))
 
     # Submit a message to the bus for each target language
-    for target_lang in config.get('TO_LANG', []):
-        topic_name = config['TRANSLATE_TOPIC']
-        if src_lang == target_lang or src_lang == 'und':
-            topic_name = config['RESULT_TOPIC']
-        message = {
-            'text': text,
-            'filename': filename,
-            'lang': target_lang,
-            'src_lang': src_lang
-        }
-        message_data = json.dumps(message).encode('utf-8')
-        topic_path = publisher.topic_path(project_id, topic_name)
-        future = publisher.publish(topic_path, data=message_data)
-        futures.append(future)
+
+    topic_name = config['RESULT_TOPIC']
+    message = {
+        'text': text,
+        'filename': filename,
+    }
+    message_data = json.dumps(message).encode('utf-8')
+    topic_path = publisher.topic_path(project_id, topic_name)
+    future = publisher.publish(topic_path, data=message_data)
+    futures.append(future)
     for future in futures:
         future.result()
 # [END functions_ocr_detect]
@@ -103,35 +94,6 @@ def process_image(file, context):
 # [END functions_ocr_process]
 
 
-# [START functions_ocr_translate]
-def translate_text(event, context):
-    if event.get('data'):
-        message_data = base64.b64decode(event['data']).decode('utf-8')
-        message = json.loads(message_data)
-    else:
-        raise ValueError('Data sector is missing in the Pub/Sub message.')
-
-    text = validate_message(message, 'text')
-    filename = validate_message(message, 'filename')
-    target_lang = validate_message(message, 'lang')
-    src_lang = validate_message(message, 'src_lang')
-
-    print('Translating text into {}.'.format(target_lang))
-    translated_text = translate_client.translate(text,
-                                                 target_language=target_lang,
-                                                 source_language=src_lang)
-    topic_name = config['RESULT_TOPIC']
-    message = {
-        'text': translated_text['translatedText'],
-        'filename': filename,
-        'lang': target_lang,
-    }
-    message_data = json.dumps(message).encode('utf-8')
-    topic_path = publisher.topic_path(project_id, topic_name)
-    future = publisher.publish(topic_path, data=message_data)
-    future.result()
-# [END functions_ocr_translate]
-
 
 # [START functions_ocr_save]
 def save_result(event, context):
@@ -143,12 +105,11 @@ def save_result(event, context):
 
     text = validate_message(message, 'text')
     filename = validate_message(message, 'filename')
-    lang = validate_message(message, 'lang')
 
     print('Received request to save file {}.'.format(filename))
 
     bucket_name = config['RESULT_BUCKET']
-    result_filename = '{}_{}.txt'.format(filename, lang)
+    result_filename = '{}.txt'.format(filename)
     bucket = storage_client.get_bucket(bucket_name)
     blob = bucket.blob(result_filename)
 
