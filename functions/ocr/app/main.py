@@ -44,8 +44,13 @@ def detect_text(bucket, filename):
     for page in text_detection_response.full_text_annotation.pages:
         for block in page.blocks:
             for paragraph in block.paragraphs:
-                print('Paragraph confidence: {}'.format(paragraph.confidence))
-
+                print('Paragraph confidence: {}'.format( paragraph.confidence))
+                for word in paragraph.words:
+                    word_text = ''.join([
+                        symbol.text for symbol in word.symbols
+                    ])
+                    print('Word text: {} (confidence: {})'.format(
+                        word_text, word.confidence))
     annotations = text_detection_response.text_annotations
     if len(annotations) > 0:
         text = annotations[0].description
